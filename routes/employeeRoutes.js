@@ -6,6 +6,11 @@ const authMiddleware = require("../middleware/authMiddleware");
 const upload = require("../middleware/uploadMiddleware");
 
 // ✅ Create Employee
-router.post("/create_employee", authMiddleware, upload.single("uploadsignatureimg"), createEmployee);
+router.post(
+  "/create_employee",
+  authMiddleware,
+  upload.single("uploadsignatureimg"),
+  createEmployee
+);
 
 module.exports = router;
