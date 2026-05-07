@@ -11,8 +11,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// ✅ Routes
 app.use("/api/auth", require("./routes/authRoutes"));
+app.use("/api/auth", require("./routes/roleRoutes"));
+app.use("/api/auth", require("./routes/employeeRoutes"));
 
+// ✅ DB Sync
 sequelize
   .sync()
   .then(() => console.log("Database connected & synced"))
