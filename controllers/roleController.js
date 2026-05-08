@@ -356,6 +356,55 @@ const updateRole = async (req, res) => {
   }
 };
 
+// ✅ Simple Role Listing — only id and name
+const getRoleListing = async (req, res) => {
+  try {
+    const roles = await sequelize.query(
+      `SELECT id, name FROM roles ORDER BY id ASC`,
+      { type: sequelize.QueryTypes.SELECT }
+    );
+    res.json({ success: true, data: roles });
+  } catch (error) {
+    console.error("Role Listing Error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const updateRoleStatus = async (req, res) => {
+  try {
+    const { roleid, status } = req.body;
+
+    if (!roleid || status === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: "roleid and status are required",
+      });
+    }
+
+    const result = await sequelize.query(
+      `UPDATE roles 
+       SET iStatus = :status 
+       WHERE id = :roleid`,
+      {
+        replacements: { roleid, status },
+        type: sequelize.QueryTypes.UPDATE,
+      }
+    );
+
+    res.json({
+      success: true,
+      message: "Role status updated successfully",
+    });
+
+  } catch (error) {
+    console.error("Role Status Update Error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   permissionList,
   createRole,
@@ -363,4 +412,6 @@ module.exports = {
   deleteRole,
   getRoleById,
   updateRole,
+  getRoleListing,
+  updateRoleStatus,
 };

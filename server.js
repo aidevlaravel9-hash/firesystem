@@ -17,6 +17,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/auth", require("./routes/roleRoutes"));
 app.use("/api/auth", require("./routes/employeeRoutes"));
+app.use("/api/auth", require("./routes/locationRoutes"));
 
 // ✅ DB Sync
 sequelize

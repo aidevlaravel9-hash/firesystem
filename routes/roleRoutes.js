@@ -8,6 +8,8 @@ const {
   deleteRole,
   getRoleById,
   updateRole,
+  getRoleListing,
+  updateRoleStatus,
 } = require("../controllers/roleController");
 const authMiddleware = require("../middleware/authMiddleware");
 
@@ -28,5 +30,11 @@ router.post("/getRoleById", authMiddleware, getRoleById);
 
 // ✅ Update Role
 router.post("/updateRole", authMiddleware, updateRole);
+
+// ✅ Update Role states
+router.post("/updateRoleStatus", authMiddleware, updateRoleStatus);
+
+// ✅ Role Listing (id & name only)
+router.post("/rolelisting", getRoleListing);
 
 module.exports = router;
