@@ -4,9 +4,6 @@ const sequelize = require("../config/db");
 const permissionList = async (req, res) => {
   console.log("Permission API Hit");
 
-  res.json({
-    success: true,
-  });
   try {
     const permissions = await sequelize.query(
       `SELECT permission_id, permission_name

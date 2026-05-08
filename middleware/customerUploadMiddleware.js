@@ -38,4 +38,22 @@ const customerUpload = multer({
   },
 });
 
-module.exports = customerUpload;
+// Middleware wrapper — returns clean JSON error instead of HTML crash
+const handleCustomerUpload = (req, res, next) => {
+  const upload = customerUpload.fields([
+    { name: "customer_company_logo",      maxCount: 1 },
+    { name: "customer_company_logo_icon", maxCount: 1 },
+  ]);
+
+  upload(req, res, (err) => {
+    if (err) {
+      return res.status(400).json({
+        success: false,
+        message: err.message || "File upload failed",
+      });
+    }
+    next();
+  });
+};
+
+module.exports = { customerUpload, handleCustomerUpload };
