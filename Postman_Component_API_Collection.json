@@ -1,0 +1,210 @@
+{
+  "info": {
+    "name": "Component Management API",
+    "description": "Complete API collection for Component Management module",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Create Component",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"component_name\": \"Fire Alarm\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/create_component",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "create_component"]
+        }
+      }
+    },
+    {
+      "name": "2. Component List",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"page\": 1,\n  \"limit\": 10,\n  \"search\": \"\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/componentlist",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "componentlist"]
+        }
+      }
+    },
+    {
+      "name": "3. Get Component By ID",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"component_id\": 1\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/get_component_by_id",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "get_component_by_id"]
+        }
+      }
+    },
+    {
+      "name": "4. Update Component Status",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"component_id\": 1,\n  \"status\": 0\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/update_component_status",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "update_component_status"]
+        }
+      }
+    },
+    {
+      "name": "5. Update Component",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"component_id\": 1,\n  \"component_name\": \"Fire Alarm System\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/update_component",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "update_component"]
+        }
+      }
+    },
+    {
+      "name": "6. Delete Component",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"component_id\": 1\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/delete_component",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "delete_component"]
+        }
+      }
+    },
+    {
+      "name": "7. Component Dropdown List",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/componentDropdownList",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "componentDropdownList"]
+        }
+      }
+    }
+  ]
+}

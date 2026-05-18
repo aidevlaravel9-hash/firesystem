@@ -1,0 +1,245 @@
+{
+  "info": {
+    "name": "Building Management API",
+    "description": "Complete API collection for Building Management with QR Code generation",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Building",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customer_id\": 1,\n  \"building_name\": \"Main Office Building\",\n  \"postcode\": \"380001\",\n  \"country_id\": 1,\n  \"state_id\": 5,\n  \"city_id\": 10,\n  \"address\": \"123 Business Park, Sector 5\",\n  \"landmark\": \"Near City Mall\",\n  \"status\": \"active\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/building/create_building",
+          "host": ["{{base_url}}"],
+          "path": ["api", "building", "create_building"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get All Buildings",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"page\": 1,\n  \"limit\": 10,\n  \"search\": \"\",\n  \"customer_id\": null,\n  \"status\": null\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/building/buildinglist",
+          "host": ["{{base_url}}"],
+          "path": ["api", "building", "buildinglist"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Building by ID",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"building_id\": 1\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/building/get_building_by_id",
+          "host": ["{{base_url}}"],
+          "path": ["api", "building", "get_building_by_id"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Building Status",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"building_id\": 1,\n  \"status\": \"inactive\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/building/update_building_status",
+          "host": ["{{base_url}}"],
+          "path": ["api", "building", "update_building_status"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Building",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"building_id\": 1,\n  \"customer_id\": 1,\n  \"building_name\": \"Main Office Building - Updated\",\n  \"postcode\": \"380001\",\n  \"country_id\": 1,\n  \"state_id\": 5,\n  \"city_id\": 10,\n  \"address\": \"123 Business Park, Sector 5, Updated Address\",\n  \"landmark\": \"Near City Mall\",\n  \"status\": \"active\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/building/update_building",
+          "host": ["{{base_url}}"],
+          "path": ["api", "building", "update_building"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Building",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"building_id\": 1\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/building/delete_building",
+          "host": ["{{base_url}}"],
+          "path": ["api", "building", "delete_building"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Generate QR Code",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"building_id\": 1\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/building/generate_qrcode",
+          "host": ["{{base_url}}"],
+          "path": ["api", "building", "generate_qrcode"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Print QR Code",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"building_id\": 1\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/building/print_qrcode",
+          "host": ["{{base_url}}"],
+          "path": ["api", "building", "print_qrcode"]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "your_jwt_token_here",
+      "type": "string"
+    }
+  ]
+}

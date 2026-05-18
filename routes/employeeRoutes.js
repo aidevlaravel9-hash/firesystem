@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const { createEmployee, employeeList, updateEmployee, deleteEmployee, updateEmployeeStatus } = require("../controllers/employeeController");
+const { createEmployee, employeeList, getEmployeeById, updateEmployee, deleteEmployee, updateEmployeeStatus } = require("../controllers/employeeController");
 const authMiddleware = require("../middleware/authMiddleware");
 const upload = require("../middleware/uploadMiddleware");
 
@@ -15,6 +15,9 @@ router.post(
 
 // ✅ Employee List (search + role filter + pagination)
 router.post("/employeelist", authMiddleware, employeeList);
+
+// ✅ Get Employee By ID
+router.post("/get_employee_by_id", authMiddleware, getEmployeeById);
 
 // ✅ Update Employee
 router.post(

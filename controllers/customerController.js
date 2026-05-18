@@ -21,6 +21,7 @@ const createCustomer = async (req, res) => {
   const t = await sequelize.transaction();
   try {
     let {
+      Prefix                = null,
       customer_name         = null,
       customer_company_name = null,
       customer_email        = null,
@@ -32,6 +33,7 @@ const createCustomer = async (req, res) => {
       customer_city_id      = null,
     } = req.body;
 
+    Prefix                = Prefix                || null;
     customer_name         = customer_name         || null;
     customer_company_name = customer_company_name || null;
     customer_email        = customer_email        || null;
@@ -42,9 +44,17 @@ const createCustomer = async (req, res) => {
     customer_state_id     = customer_state_id     || null;
     customer_city_id      = customer_city_id      || null;
 
+    // ✅ Get created_by_id from authenticated user
+    const created_by_id = req.user?.id;
+
     if (!customer_name || !customer_email || !customer_number) {
       await t.rollback();
       return res.status(400).json({ success: false, message: "customer_name, customer_email and customer_number are required" });
+    }
+
+    if (!created_by_id) {
+      await t.rollback();
+      return res.status(401).json({ success: false, message: "Unauthorized: user not found" });
     }
 
     // Duplicate email check
@@ -63,20 +73,22 @@ const createCustomer = async (req, res) => {
 
     await sequelize.query(
       `INSERT INTO customer
-         (customer_name, customer_company_name, customer_email, customer_number,
+         (Prefix, customer_name, customer_company_name, customer_email, customer_number,
           customer_post_code, customer_address, customer_country_id, customer_state_id,
-          customer_city_id, customer_company_logo, customer_company_logo_icon, created_at)
+          customer_city_id, customer_company_logo, customer_company_logo_icon, created_by_id, created_at)
        VALUES
-         (:customer_name, :customer_company_name, :customer_email, :customer_number,
+         (:Prefix, :customer_name, :customer_company_name, :customer_email, :customer_number,
           :customer_post_code, :customer_address, :customer_country_id, :customer_state_id,
-          :customer_city_id, :customer_company_logo, :customer_company_logo_icon, NOW())`,
+          :customer_city_id, :customer_company_logo, :customer_company_logo_icon, :created_by_id, NOW())`,
       {
         replacements: {
+          Prefix,
           customer_name, customer_company_name, customer_email,
           customer_number, customer_post_code, customer_address,
           customer_country_id, customer_state_id, customer_city_id,
           customer_company_logo:      logoFile,
           customer_company_logo_icon: logoIconFile,
+          created_by_id,
         },
         transaction: t,
       }
@@ -134,6 +146,7 @@ const customerList = async (req, res) => {
     const customers = await sequelize.query(
       `SELECT
          c.customer_id,
+         c.Prefix,
          c.customer_name,
          c.customer_company_name,
          c.customer_email,
@@ -188,7 +201,73 @@ const customerList = async (req, res) => {
   }
 };
 
-// ─── 3. Update Customer Status ───────────────────────────────────────────────
+// ─── 3. Get Customer By ID ───────────────────────────────────────────────────
+const getCustomerById = async (req, res) => {
+  try {
+    const { customer_id } = req.body;
+
+    if (!customer_id) {
+      return res.status(400).json({ success: false, message: "customer_id is required" });
+    }
+
+    const [customer] = await sequelize.query(
+      `SELECT
+         c.customer_id,
+         c.Prefix,
+         c.customer_name,
+         c.customer_company_name,
+         c.customer_email,
+         c.customer_number,
+         c.customer_post_code,
+         c.customer_address,
+         c.customer_status,
+         c.customer_country_id,
+         co.country_name        AS country_name,
+         c.customer_state_id,
+         st.strStateName        AS state_name,
+         c.customer_city_id,
+         ci.strCityName         AS city_name,
+         c.customer_company_logo,
+         c.customer_company_logo_icon,
+         c.created_by_id,
+         c.created_at,
+         c.updated_at
+       FROM customer c
+       LEFT JOIN countrymaster co ON co.countryid   = c.customer_country_id
+       LEFT JOIN statemaster   st ON st.iStateId    = c.customer_state_id
+       LEFT JOIN citymaster    ci ON ci.iCityId     = c.customer_city_id
+       WHERE c.customer_id = :customer_id
+       LIMIT 1`,
+      {
+        replacements: { customer_id },
+        type: sequelize.QueryTypes.SELECT,
+      }
+    );
+
+    if (!customer) {
+      return res.status(404).json({ success: false, message: "Customer not found" });
+    }
+
+    // Append full URLs
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const data = {
+      ...customer,
+      logo_url: customer.customer_company_logo
+        ? `${baseUrl}/uploads/customer_logos/${customer.customer_company_logo}`
+        : null,
+      logo_icon_url: customer.customer_company_logo_icon
+        ? `${baseUrl}/uploads/customer_logo_icons/${customer.customer_company_logo_icon}`
+        : null,
+    };
+
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error("Get Customer By ID Error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ─── 4. Update Customer Status ───────────────────────────────────────────────
 const updateCustomerStatus = async (req, res) => {
   try {
     const { customer_id, status } = req.body;
@@ -217,7 +296,138 @@ const updateCustomerStatus = async (req, res) => {
   }
 };
 
-// ─── 4. Delete Customer ──────────────────────────────────────────────────────
+// ─── 5. Update Customer ──────────────────────────────────────────────────────
+const updateCustomer = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    let {
+      customer_id           = null,
+      Prefix                = null,
+      customer_name         = null,
+      customer_company_name = null,
+      customer_email        = null,
+      customer_number       = null,
+      customer_post_code    = null,
+      customer_address      = null,
+      customer_country_id   = null,
+      customer_state_id     = null,
+      customer_city_id      = null,
+    } = req.body;
+
+    customer_id           = customer_id           || null;
+    Prefix                = Prefix                || null;
+    customer_name         = customer_name         || null;
+    customer_company_name = customer_company_name || null;
+    customer_email        = customer_email        || null;
+    customer_number       = customer_number       || null;
+    customer_post_code    = customer_post_code    || null;
+    customer_address      = customer_address      || null;
+    customer_country_id   = customer_country_id   || null;
+    customer_state_id     = customer_state_id     || null;
+    customer_city_id      = customer_city_id      || null;
+
+    // ✅ Get created_by_id from authenticated user
+    const created_by_id = req.user?.id;
+
+    if (!customer_id) {
+      await t.rollback();
+      return res.status(400).json({ success: false, message: "customer_id is required" });
+    }
+
+    if (!customer_name || !customer_email || !customer_number) {
+      await t.rollback();
+      return res.status(400).json({ success: false, message: "customer_name, customer_email and customer_number are required" });
+    }
+
+    if (!created_by_id) {
+      await t.rollback();
+      return res.status(401).json({ success: false, message: "Unauthorized: user not found" });
+    }
+
+    // Check if customer exists
+    const [existing] = await sequelize.query(
+      `SELECT customer_id, customer_company_logo, customer_company_logo_icon
+       FROM customer WHERE customer_id = :customer_id LIMIT 1`,
+      { replacements: { customer_id }, type: sequelize.QueryTypes.SELECT, transaction: t }
+    );
+    if (!existing) {
+      await t.rollback();
+      return res.status(404).json({ success: false, message: "Customer not found" });
+    }
+
+    // Check email duplicate (exclude current customer)
+    const [emailExists] = await sequelize.query(
+      `SELECT customer_id FROM customer WHERE customer_email = :customer_email AND customer_id != :customer_id LIMIT 1`,
+      { replacements: { customer_email, customer_id }, type: sequelize.QueryTypes.SELECT, transaction: t }
+    );
+    if (emailExists) {
+      await t.rollback();
+      return res.status(400).json({ success: false, message: "Email already used by another customer" });
+    }
+
+    // Handle file uploads
+    let logoFile     = existing.customer_company_logo;
+    let logoIconFile = existing.customer_company_logo_icon;
+
+    if (req.files?.customer_company_logo?.[0]) {
+      // Delete old logo
+      deleteFile(LOGO_DIR, existing.customer_company_logo);
+      logoFile = req.files.customer_company_logo[0].filename;
+    }
+
+    if (req.files?.customer_company_logo_icon?.[0]) {
+      // Delete old logo icon
+      deleteFile(LOGO_ICON_DIR, existing.customer_company_logo_icon);
+      logoIconFile = req.files.customer_company_logo_icon[0].filename;
+    }
+
+    await sequelize.query(
+      `UPDATE customer SET
+         Prefix                      = :Prefix,
+         customer_name               = :customer_name,
+         customer_company_name       = :customer_company_name,
+         customer_email              = :customer_email,
+         customer_number             = :customer_number,
+         customer_post_code          = :customer_post_code,
+         customer_address            = :customer_address,
+         customer_country_id         = :customer_country_id,
+         customer_state_id           = :customer_state_id,
+         customer_city_id            = :customer_city_id,
+         customer_company_logo       = :customer_company_logo,
+         customer_company_logo_icon  = :customer_company_logo_icon,
+         created_by_id               = :created_by_id,
+         updated_at                  = NOW()
+       WHERE customer_id = :customer_id`,
+      {
+        replacements: {
+          Prefix,
+          customer_name, customer_company_name, customer_email,
+          customer_number, customer_post_code, customer_address,
+          customer_country_id, customer_state_id, customer_city_id,
+          customer_company_logo:      logoFile,
+          customer_company_logo_icon: logoIconFile,
+          created_by_id,
+          customer_id,
+        },
+        transaction: t,
+      }
+    );
+
+    await t.commit();
+    res.json({
+      success: true,
+      message: "Customer updated successfully",
+      logo_url:      buildUrl(req, "customer_logos",      logoFile),
+      logo_icon_url: buildUrl(req, "customer_logo_icons", logoIconFile),
+    });
+  } catch (error) {
+    await t.rollback();
+    console.error("Update Customer Error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ─── 6. Delete Customer ──────────────────────────────────────────────────────
 const deleteCustomer = async (req, res) => {
   const t = await sequelize.transaction();
   try {
@@ -256,4 +466,32 @@ const deleteCustomer = async (req, res) => {
   }
 };
 
-module.exports = { createCustomer, customerList, updateCustomerStatus, deleteCustomer };
+const customerDropdownList = async (req, res) => {
+  try {
+    const customers = await sequelize.query(
+      `SELECT 
+         customer_id AS id,
+         customer_name AS name
+       FROM customer
+       WHERE customer_status = 1
+       ORDER BY customer_name ASC`,
+      {
+        type: sequelize.QueryTypes.SELECT,
+      }
+    );
+
+    res.json({
+      success: true,
+      data: customers
+    });
+
+  } catch (error) {
+    console.error("Customer Dropdown Error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+module.exports = { createCustomer, customerList, getCustomerById, updateCustomerStatus, updateCustomer, deleteCustomer,customerDropdownList };

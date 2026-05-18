@@ -19,6 +19,9 @@ app.use("/api/auth", require("./routes/roleRoutes"));
 app.use("/api/auth", require("./routes/employeeRoutes"));
 app.use("/api/auth", require("./routes/locationRoutes"));
 app.use("/api/auth", require("./routes/customerRoutes"));
+app.use("/api/auth", require("./routes/buildingRoutes"));
+app.use("/api/auth", require("./routes/componentRoutes"));
+app.use("/api/auth", require("./routes/maintenanceTypeRoutes"));
 
 // ✅ DB Sync
 sequelize

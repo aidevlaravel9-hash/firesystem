@@ -1,0 +1,355 @@
+{
+  "info": {
+    "name": "Employee & Customer Management APIs",
+    "description": "Complete API collection for Employee and Customer management",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Employee APIs",
+      "item": [
+        {
+          "name": "Create Employee",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"role_id\": 2,\n  \"email\": \"john.doe@example.com\",\n  \"mobilenumber\": \"1234567890\",\n  \"postcode\": \"12345\",\n  \"address\": \"123 Main Street\",\n  \"countryid\": 1,\n  \"stateid\": 1,\n  \"cityid\": 1,\n  \"uploadsignatureimg\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/employee/create_employee",
+              "host": ["{{base_url}}"],
+              "path": ["api", "employee", "create_employee"]
+            }
+          }
+        },
+        {
+          "name": "Employee List",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"page\": 1,\n  \"limit\": 10,\n  \"search\": \"\",\n  \"role_id\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/employee/employeelist",
+              "host": ["{{base_url}}"],
+              "path": ["api", "employee", "employeelist"]
+            }
+          }
+        },
+        {
+          "name": "Get Employee By ID",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employee_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/employee/get_employee_by_id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "employee", "get_employee_by_id"]
+            }
+          }
+        },
+        {
+          "name": "Update Employee",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employee_id\": 1,\n  \"name\": \"John Doe Updated\",\n  \"role_id\": 2,\n  \"email\": \"john.doe@example.com\",\n  \"mobilenumber\": \"1234567890\",\n  \"postcode\": \"12345\",\n  \"address\": \"123 Main Street Updated\",\n  \"countryid\": 1,\n  \"stateid\": 1,\n  \"cityid\": 1,\n  \"uploadsignatureimg\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/employee/update_employee",
+              "host": ["{{base_url}}"],
+              "path": ["api", "employee", "update_employee"]
+            }
+          }
+        },
+        {
+          "name": "Update Employee Status",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employee_id\": 1,\n  \"status\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/employee/update_employee_status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "employee", "update_employee_status"]
+            }
+          }
+        },
+        {
+          "name": "Delete Employee",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employee_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/employee/delete_employee",
+              "host": ["{{base_url}}"],
+              "path": ["api", "employee", "delete_employee"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customer APIs",
+      "item": [
+        {
+          "name": "Create Customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Prefix\": \"Mr.\",\n  \"customer_name\": \"Jane Smith\",\n  \"customer_company_name\": \"ABC Corp\",\n  \"customer_email\": \"jane.smith@example.com\",\n  \"customer_number\": \"9876543210\",\n  \"customer_post_code\": \"54321\",\n  \"customer_address\": \"456 Business Ave\",\n  \"customer_country_id\": 1,\n  \"customer_state_id\": 1,\n  \"customer_city_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/customer/create_customer",
+              "host": ["{{base_url}}"],
+              "path": ["api", "customer", "create_customer"]
+            }
+          }
+        },
+        {
+          "name": "Customer List",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"page\": 1,\n  \"limit\": 10,\n  \"search\": \"\",\n  \"country_id\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/customer/customerlist",
+              "host": ["{{base_url}}"],
+              "path": ["api", "customer", "customerlist"]
+            }
+          }
+        },
+        {
+          "name": "Get Customer By ID",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/customer/get_customer_by_id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "customer", "get_customer_by_id"]
+            }
+          }
+        },
+        {
+          "name": "Update Customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_id\": 1,\n  \"Prefix\": \"Mrs.\",\n  \"customer_name\": \"Jane Smith Updated\",\n  \"customer_company_name\": \"ABC Corp Updated\",\n  \"customer_email\": \"jane.smith@example.com\",\n  \"customer_number\": \"9876543210\",\n  \"customer_post_code\": \"54321\",\n  \"customer_address\": \"456 Business Ave Updated\",\n  \"customer_country_id\": 1,\n  \"customer_state_id\": 1,\n  \"customer_city_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/customer/update_customer",
+              "host": ["{{base_url}}"],
+              "path": ["api", "customer", "update_customer"]
+            }
+          }
+        },
+        {
+          "name": "Update Customer Status",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_id\": 1,\n  \"status\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/customer/update_customer_status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "customer", "update_customer_status"]
+            }
+          }
+        },
+        {
+          "name": "Delete Customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/customer/delete_customer",
+              "host": ["{{base_url}}"],
+              "path": ["api", "customer", "delete_customer"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "your_jwt_token_here",
+      "type": "string"
+    }
+  ]
+}

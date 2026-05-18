@@ -17,6 +17,7 @@ const createEmployee = async (req, res) => {
       countryid = null,
       stateid = null,
       cityid = null,
+      qrcodeaccess = 0,
     } = req.body;
 
     // Convert empty strings to null
@@ -29,12 +30,40 @@ const createEmployee = async (req, res) => {
     countryid = countryid || null;
     stateid = stateid || null;
     cityid = cityid || null;
+    qrcodeaccess = qrcodeaccess !== undefined && qrcodeaccess !== null ? Number(qrcodeaccess) : 1;
+
+    // ✅ Get created_by_id from authenticated user
+    const created_by_id = req.user?.id;
 
     if (!name || !email || !mobilenumber || !role_id) {
       await t.rollback();
       return res
         .status(400)
         .json({ success: false, message: "Required fields missing" });
+    }
+
+    if (!created_by_id) {
+      await t.rollback();
+      return res
+        .status(401)
+        .json({ success: false, message: "Unauthorized: user not found" });
+    }
+
+    // ✅ Check if role_id exists (foreign key reference check)
+    const [roleExists] = await sequelize.query(
+      `SELECT id FROM roles WHERE id = :role_id LIMIT 1`,
+      {
+        replacements: { role_id },
+        type: sequelize.QueryTypes.SELECT,
+        transaction: t,
+      }
+    );
+
+    if (!roleExists) {
+      await t.rollback();
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid role_id: Role does not exist" });
     }
 
     const [existingUser] = await sequelize.query(
@@ -84,17 +113,17 @@ const createEmployee = async (req, res) => {
       }
     }
 
-    const plainPassword = `${name.toLowerCase()}@123`;
+    const plainPassword = '123456'; //`${name.toLowerCase()}@123`;
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(plainPassword, salt);
 
     await sequelize.query(
       `INSERT INTO users
        (name, role_id, email, mobile_number, postcode, address,
-        countryid, stateid, cityid, uploadsignatureimg, password,createdAt)
+        countryid, stateid, cityid, uploadsignatureimg, qrcodeaccess, password, created_by_id, createdAt)
        VALUES
        (:name, :role_id, :email, :mobilenumber, :postcode, :address,
-        :countryid, :stateid, :cityid, :uploadsignatureimg, :password, NOW())`,
+        :countryid, :stateid, :cityid, :uploadsignatureimg, :qrcodeaccess, :password, :created_by_id, NOW())`,
       {
         replacements: {
           name,
@@ -107,7 +136,9 @@ const createEmployee = async (req, res) => {
           stateid,
           cityid,
           uploadsignatureimg: imagePath,
+          qrcodeaccess,
           password: hashedPassword,
+          created_by_id,
         },
         transaction: t,
       }
@@ -133,7 +164,7 @@ const createEmployee = async (req, res) => {
 // ✅ Employee List (with search, role filter & pagination)
 const employeeList = async (req, res) => {
   try {
-    let { page = 1, limit = 10, search = "", role_id = null } = req.body;
+    let { page = 1, limit = 10, search = "", role_id = null, created_by_id = null } = req.body;
 
     page = parseInt(page);
     limit = parseInt(limit);
@@ -155,6 +186,11 @@ const employeeList = async (req, res) => {
     if (role_id !== null && role_id !== "" && role_id !== undefined) {
       whereConditions += ` AND u.role_id = :role_id`;
       replacements.role_id = Number(role_id);
+    }
+
+    if (created_by_id !== null && created_by_id !== "" && created_by_id !== undefined) {
+      whereConditions += ` AND u.created_by_id = :created_by_id`;
+      replacements.created_by_id = Number(created_by_id);
     }
 
     // Total count
@@ -185,6 +221,7 @@ const employeeList = async (req, res) => {
          u.cityid,
          ci.strCityName     AS city_name,
          u.uploadsignatureimg,
+         u.qrcodeaccess,
          u.createdAt
        FROM users u
        LEFT JOIN roles    r  ON r.id  = u.role_id
@@ -238,6 +275,7 @@ const updateEmployee = async (req, res) => {
       countryid = null,
       stateid = null,
       cityid = null,
+      qrcodeaccess = null,
     } = req.body;
 
     // Convert empty strings to null
@@ -251,6 +289,10 @@ const updateEmployee = async (req, res) => {
     countryid  = countryid  || null;
     stateid    = stateid    || null;
     cityid     = cityid     || null;
+    qrcodeaccess = qrcodeaccess !== undefined && qrcodeaccess !== null ? Number(qrcodeaccess) : 1;
+
+    // ✅ Get created_by_id from authenticated user
+    const created_by_id = req.user?.id;
 
     if (!employee_id) {
       await t.rollback();
@@ -260,6 +302,26 @@ const updateEmployee = async (req, res) => {
     if (!name || !email || !mobilenumber || !role_id) {
       await t.rollback();
       return res.status(400).json({ success: false, message: "Required fields missing" });
+    }
+
+    if (!created_by_id) {
+      await t.rollback();
+      return res.status(401).json({ success: false, message: "Unauthorized: user not found" });
+    }
+
+    // ✅ Check if role_id exists (foreign key reference check)
+    const [roleExists] = await sequelize.query(
+      `SELECT id FROM roles WHERE id = :role_id LIMIT 1`,
+      {
+        replacements: { role_id },
+        type: sequelize.QueryTypes.SELECT,
+        transaction: t,
+      }
+    );
+
+    if (!roleExists) {
+      await t.rollback();
+      return res.status(400).json({ success: false, message: "Invalid role_id: Role does not exist" });
     }
 
     // Check employee exists
@@ -312,8 +374,8 @@ const updateEmployee = async (req, res) => {
       }
     }
 
-    await sequelize.query(
-      `UPDATE users SET
+    // Build update query with conditional qrcodeaccess update
+    let updateQuery = `UPDATE users SET
          name               = :name,
          role_id            = :role_id,
          email              = :email,
@@ -324,18 +386,42 @@ const updateEmployee = async (req, res) => {
          stateid            = :stateid,
          cityid             = :cityid,
          uploadsignatureimg = :uploadsignatureimg,
-         updatedAt          = NOW()
-       WHERE id = :employee_id`,
-      {
-        replacements: {
-          name, role_id, email, mobilenumber, postcode, address,
-          countryid, stateid, cityid,
-          uploadsignatureimg: imagePath,
-          employee_id,
-        },
-        transaction: t,
-      }
-    );
+         created_by_id      = :created_by_id,
+         updatedAt          = NOW()`;
+
+    const replacements = {
+      name, role_id, email, mobilenumber, postcode, address,
+      countryid, stateid, cityid,
+      uploadsignatureimg: imagePath,
+      created_by_id,
+      employee_id,
+    };
+
+    // Only update qrcodeaccess if it's provided
+    if (qrcodeaccess !== null) {
+      updateQuery = `UPDATE users SET
+         name               = :name,
+         role_id            = :role_id,
+         email              = :email,
+         mobile_number      = :mobilenumber,
+         postcode           = :postcode,
+         address            = :address,
+         countryid          = :countryid,
+         stateid            = :stateid,
+         cityid             = :cityid,
+         uploadsignatureimg = :uploadsignatureimg,
+         qrcodeaccess       = :qrcodeaccess,
+         created_by_id      = :created_by_id,
+         updatedAt          = NOW()`;
+      replacements.qrcodeaccess = qrcodeaccess;
+    }
+
+    updateQuery += ` WHERE id = :employee_id`;
+
+    await sequelize.query(updateQuery, {
+      replacements,
+      transaction: t,
+    });
 
     await t.commit();
     res.json({
@@ -393,6 +479,70 @@ const deleteEmployee = async (req, res) => {
   }
 };
 
+// ✅ Get Employee By ID
+const getEmployeeById = async (req, res) => {
+  try {
+    const { employee_id } = req.body;
+
+    if (!employee_id) {
+      return res.status(400).json({ success: false, message: "employee_id is required" });
+    }
+
+    const [employee] = await sequelize.query(
+      `SELECT
+         u.id,
+         u.name,
+         u.email,
+         u.mobile_number,
+         u.postcode,
+         u.address,
+         u.status,
+         u.role_id,
+         r.name      AS role_name,
+         u.countryid,
+         co.country_name     AS country_name,
+         u.stateid,
+         st.strStateName     AS state_name,
+         u.cityid,
+         ci.strCityName     AS city_name,
+         u.uploadsignatureimg,
+         u.qrcodeaccess,
+         u.created_by_id,
+         u.createdAt,
+         u.updatedAt
+       FROM users u
+       LEFT JOIN roles    r  ON r.id  = u.role_id
+       LEFT JOIN countrymaster co ON co.countryid = u.countryid
+       LEFT JOIN statemaster    st ON st.iStateId = u.stateid
+       LEFT JOIN citymaster    ci ON ci.iCityId = u.cityid
+       WHERE u.id = :employee_id
+       LIMIT 1`,
+      {
+        replacements: { employee_id },
+        type: sequelize.QueryTypes.SELECT,
+      }
+    );
+
+    if (!employee) {
+      return res.status(404).json({ success: false, message: "Employee not found" });
+    }
+
+    // Append full signature URL
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const data = {
+      ...employee,
+      signature_url: employee.uploadsignatureimg
+        ? `${baseUrl}/uploads/signatures/${employee.uploadsignatureimg}`
+        : null,
+    };
+
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error("Get Employee By ID Error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // ✅ Update Employee Status (active / inactive)
 const updateEmployeeStatus = async (req, res) => {
   try {
@@ -423,4 +573,4 @@ const updateEmployeeStatus = async (req, res) => {
   }
 };
 
-module.exports = { createEmployee, employeeList, updateEmployee, deleteEmployee, updateEmployeeStatus };
+module.exports = { createEmployee, employeeList, getEmployeeById, updateEmployee, deleteEmployee, updateEmployeeStatus };

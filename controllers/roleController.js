@@ -22,12 +22,22 @@ const permissionList = async (req, res) => {
 // ✅ Create Role
 const createRole = async (req, res) => {
   const { rolename, permissions } = req.body;
+  const created_by_id = req.user?.id; // ✅ get from auth
+
   const t = await sequelize.transaction();
+
   try {
     if (!rolename || !Array.isArray(permissions) || permissions.length === 0) {
       return res.status(400).json({
         success: false,
         message: "Role name and permissions required",
+      });
+    }
+
+    if (!created_by_id) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: user not found",
       });
     }
 
@@ -49,9 +59,12 @@ const createRole = async (req, res) => {
     }
 
     const [result, metadata] = await sequelize.query(
-      `INSERT INTO roles (name, guard_name, created_at, updated_at)
-       VALUES (:rolename, 'web', NOW(), NOW())`,
-      { replacements: { rolename }, transaction: t }
+      `INSERT INTO roles (name, guard_name, created_by_id, created_at, updated_at)
+       VALUES (:rolename, 'web', :created_by_id, NOW(), NOW())`,
+      { 
+        replacements: { rolename, created_by_id }, 
+        transaction: t 
+      }
     );
 
     const roleId = metadata?.insertId ?? result?.insertId ?? result;
@@ -62,21 +75,24 @@ const createRole = async (req, res) => {
         (p) =>
           `(${roleId}, ${Number(p.permissionid)}, ${Number(p.read)}, ${Number(
             p.write
-          )}, NOW(), NOW())`
+          )}, ${created_by_id}, NOW(), NOW())`
       )
       .join(", ");
 
     await sequelize.query(
-      `INSERT INTO role_permissions (role_id, permission_id, \`read\`, \`write\`, created_at, updated_at)
+      `INSERT INTO role_permissions 
+       (role_id, permission_id, \`read\`, \`write\`, created_by_id, created_at, updated_at)
        VALUES ${values}`,
       { transaction: t }
     );
 
     await t.commit();
+
     res.json({
       success: true,
       message: "Role & permissions saved successfully",
     });
+
   } catch (error) {
     await t.rollback();
     console.error("Create Role Error:", error);
@@ -84,7 +100,6 @@ const createRole = async (req, res) => {
   }
 };
 
-// ✅ Role List (paginated)
 const roleList = async (req, res) => {
   try {
     let {
@@ -92,6 +107,7 @@ const roleList = async (req, res) => {
       limit = 10,
       search = "",
       permission_search = null,
+      created_by_id = null,
     } = req.body;
 
     page = parseInt(page);
@@ -108,6 +124,11 @@ const roleList = async (req, res) => {
       )`;
     }
 
+    if (created_by_id !== null && created_by_id !== "") {
+      whereConditions += ` AND r.created_by_id = :created_by_id`;
+    }
+
+
     const rolesList = await sequelize.query(
       `SELECT r.id, r.name FROM roles r ${whereConditions}
        ORDER BY r.id ASC LIMIT :limit OFFSET :offset`,
@@ -115,6 +136,7 @@ const roleList = async (req, res) => {
         replacements: {
           search: `%${search}%`,
           permission_search: Number(permission_search),
+          created_by_id: created_by_id,
           limit,
           offset,
         },
@@ -129,13 +151,16 @@ const roleList = async (req, res) => {
     const roleIds = rolesList.map((r) => r.id);
 
     const permissionsData = await sequelize.query(
-      `SELECT r.id AS role_id, r.name AS role_name,
-              p.permission_id, p.permission_name, rp.read, rp.write
-       FROM roles r
-       LEFT JOIN role_permissions rp ON r.id = rp.role_id
-       LEFT JOIN permission p ON p.permission_id = rp.permission_id
-       WHERE r.id IN (:roleIds)
-       ORDER BY r.id ASC`,
+      `SELECT r.id AS role_id, r.name AS role_name, r.iStatus AS iStatus,
+          p.permission_id, p.permission_name, rp.read, rp.write
+      FROM roles r
+      LEFT JOIN role_permissions rp 
+        ON r.id = rp.role_id 
+        AND (rp.read = 1 OR rp.write = 1)  
+      LEFT JOIN permission p 
+        ON p.permission_id = rp.permission_id
+      WHERE r.id IN (:roleIds)
+      ORDER BY r.id ASC`,
       { replacements: { roleIds }, type: sequelize.QueryTypes.SELECT }
     );
 
@@ -145,6 +170,7 @@ const roleList = async (req, res) => {
         replacements: {
           search: `%${search}%`,
           permission_search: Number(permission_search),
+          created_by_id: created_by_id,
         },
         type: sequelize.QueryTypes.SELECT,
       }
@@ -158,6 +184,7 @@ const roleList = async (req, res) => {
         groupedRoles[row.role_id] = {
           role_id: row.role_id,
           role_name: row.role_name,
+          iStatus: row.iStatus,
           permissions: [],
         };
       }
@@ -273,12 +300,22 @@ const getRoleById = async (req, res) => {
 // ✅ Update Role
 const updateRole = async (req, res) => {
   const { role_id, rolename, permissions } = req.body;
+  const created_by_id = req.user?.id; // ✅ from auth
+
   const t = await sequelize.transaction();
+
   try {
     if (!role_id || !rolename || !Array.isArray(permissions)) {
       return res.status(400).json({
         success: false,
         message: "role_id, rolename and permissions required",
+      });
+    }
+
+    if (!created_by_id) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
       });
     }
 
@@ -314,11 +351,18 @@ const updateRole = async (req, res) => {
         .json({ success: false, message: "Role name already exists" });
     }
 
+    // ✅ Update role with created_by_id (as per your requirement)
     await sequelize.query(
-      `UPDATE roles SET name = :rolename, updated_at = NOW() WHERE id = :role_id`,
-      { replacements: { rolename, role_id }, transaction: t }
+      `UPDATE roles 
+       SET name = :rolename, created_by_id = :created_by_id, updated_at = NOW() 
+       WHERE id = :role_id`,
+      { 
+        replacements: { rolename, role_id, created_by_id }, 
+        transaction: t 
+      }
     );
 
+    // ✅ Delete old permissions
     await sequelize.query(
       `DELETE FROM role_permissions WHERE role_id = :role_id`,
       {
@@ -327,25 +371,29 @@ const updateRole = async (req, res) => {
       }
     );
 
+    // ✅ Insert new permissions with created_by_id
     if (permissions.length > 0) {
       const values = permissions
         .map(
           (p) =>
             `(${role_id}, ${Number(p.permissionid)}, ${Number(
               p.read
-            )}, ${Number(p.write)}, NOW(), NOW())`
+            )}, ${Number(p.write)}, ${created_by_id}, NOW(), NOW())`
         )
         .join(", ");
 
       await sequelize.query(
-        `INSERT INTO role_permissions (role_id, permission_id, \`read\`, \`write\`, created_at, updated_at)
+        `INSERT INTO role_permissions 
+        (role_id, permission_id, \`read\`, \`write\`, created_by_id, created_at, updated_at)
          VALUES ${values}`,
         { transaction: t }
       );
     }
 
     await t.commit();
+
     res.json({ success: true, message: "Role updated successfully" });
+
   } catch (error) {
     await t.rollback();
     console.error("Update Role Error:", error);
@@ -356,9 +404,22 @@ const updateRole = async (req, res) => {
 // ✅ Simple Role Listing — only id and name
 const getRoleListing = async (req, res) => {
   try {
+    let { created_by_id = null } = req.body;  
+    let where = "WHERE 1=1";
+    const replacements = {};
+    if (created_by_id !== null && created_by_id !== "" && created_by_id !== undefined) {
+      where += ` AND created_by_id = :created_by_id`;
+      replacements.created_by_id = Number(created_by_id);
+    }
     const roles = await sequelize.query(
-      `SELECT id, name FROM roles ORDER BY id ASC`,
-      { type: sequelize.QueryTypes.SELECT }
+      `SELECT id, name 
+       FROM roles 
+       ${where}
+       ORDER BY id ASC`,
+      {
+        replacements,
+        type: sequelize.QueryTypes.SELECT,
+      }
     );
     res.json({ success: true, data: roles });
   } catch (error) {
